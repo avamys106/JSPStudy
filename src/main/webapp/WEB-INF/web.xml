@@ -66,4 +66,18 @@
    <session-timeout>20</session-timeout>
   </session-config>
   
+  <!-- 
+  게시판의 페이지 기능 추가 
+  	POSTS_PER_PAGE : 한 페이지에 출력할 게시물의 갯수를 설정
+  	PAGES_PER_BLOCK : 한 블럭당 출력할 페이지번호의 갯수를 설정
+  -->
+  <context-param>
+  	<param-name>POSTS_PER_PAGE</param-name>
+  	<param-value>10</param-value>
+  </context-param>
+  <context-param>
+  	<param-name>PAGES_PER_BLOCK</param-name>
+  	<param-value>5</param-value>
+  </context-param>
+  
 </web-app>

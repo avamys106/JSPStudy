@@ -44,21 +44,12 @@ public class BoardDAO extends JDBConnect {
 		return totalCount;
 	}
 	
-	/*
-	작성된 게시물을 인출하여 반환한다. 특히 반환값은 여러개의 레코드를
-	반환할 수 있고, 순서를 보장해야 하므로 List컬렉션을 사용한다.
-	*/
 	public List<BoardDTO> selectList(Map<String, Object> map) {
-		
-		/*
-		List 계열의 컬렉션을 생성. 이때 타입 매개변수는 board 테이블을
-		대상으로 하므로 BoardDTO로 설정한다.  
-		*/
 		List<BoardDTO> bbs = new Vector<BoardDTO>();
 		
 		/*
-		레코드 인출을 위한 select 쿼리문 작성. 최근 게시물이 상단에
-		출력되야 하므로 일련번호의 내림차순으로 정렬한다.  
+		검색조건에 일치하는 게시물을 얻어온 후 각 페이지에 출력할 구간까지
+		설정한 서브쿼리문 작성
 		*/
 		String query = " SELECT * FROM board ";
 		if (map.get("searchWord") != null) {
@@ -68,23 +59,17 @@ public class BoardDAO extends JDBConnect {
 		query += " ORDER BY num DESC ";
 		
 		try {
-			//쿼리문 실행을 위한 인스턴스 생성
 			stmt = con.createStatement();
 			rs = stmt.executeQuery(query);
-			//반환된 ResuleSet의 갯수만큼 반복한다. 
+			
 			while (rs.next()) {
-				//하나의 레코드를 저장할 수 있는 DTO 인스턴스 생성
 				BoardDTO dto = new BoardDTO();
-				
-				//setter를 이용해서 각 컬럼의 값을 멤버변수에 저장
 				dto.setNum(rs.getString("num"));
 				dto.setTitle(rs.getString("title"));
 				dto.setContent(rs.getString("content"));
 				dto.setPostdate(rs.getDate("postdate"));
 				dto.setId(rs.getString("id"));
 				dto.setVisitcount(rs.getString("visitcount"));
-				
-				//List에 DTO를 추가한다.
 				bbs.add(dto);
 			}
 		} catch (Exception e) {
@@ -221,6 +206,56 @@ public class BoardDAO extends JDBConnect {
 		return result;
 	}
 	
+	public List<BoardDTO> selectListPage(Map<String, Object> map) {
+		List<BoardDTO> bbs = new Vector<BoardDTO>();
+		
+		/*
+		검색조건에 일치하는 게시물을 얻어온 후 각 페이지에 출력할 구간까지
+		설정한 서브쿼리문 작성
+		*/
+		String query = " SELECT * FROM ( "
+						+ " SELECT Tb.*, ROWNUM rNUM FROM ( "
+						+ " SELECT * FROM board ";
+		//검색어가 있는 경우에만 where절을 추가
+		if (map.get("searchWord") != null) {
+			query += " WHERE " + map.get("searchField")
+					+ " LIKE '%" + map.get("searchWord") + "%' ";
+		}
+		/*
+		게시물의 구간을 결정하기 위해 between 혹은 비교연산자를 사용할 수
+		있다. 아래의 where절은 rNum>? 과 같이 변경할 수 있다.
+		*/
+		query += " ORDER BY num DESC "
+				+ " ) Tb "
+				+ " ) "
+				+ " WHERE rNUM BETWEEN ? AND ? ";
+		
+		try {
+			//인파라미터가 있는 쿼리문이므로 prepared 인스턴스 생성
+			psmt = con.prepareStatement(query);
+			//인파라미터 설정(출력할 페이지의 구간)
+			psmt.setString(1, map.get("start").toString());
+			psmt.setString(2, map.get("end").toString());
+			rs = psmt.executeQuery();
+			while (rs.next()) {
+				BoardDTO dto = new BoardDTO();
+				//일련번호~조회수까지 DTO에 저장
+				dto.setNum(rs.getString("num"));
+				dto.setTitle(rs.getString("title"));
+				dto.setContent(rs.getString("content"));
+				dto.setPostdate(rs.getDate("postdate"));
+				dto.setId(rs.getString("id"));
+				dto.setVisitcount(rs.getString("visitcount"));
+				//하나의 레코드를 저장한 DTO를 List에 추가
+				bbs.add(dto);
+			}
+		} catch (Exception e) {
+			System.out.println("게시물 조회 중 예외 발생");
+			e.printStackTrace();
+		}
+		
+		return bbs;
+	}
 
 }
 

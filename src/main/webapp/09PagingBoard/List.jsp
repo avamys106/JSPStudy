@@ -1,3 +1,4 @@
+<%@page import="utils.BoardPage"%>
 <%@page import="java.util.List"%>
 <%@page import="model1.board.BoardDTO"%>
 <%@page import="java.util.HashMap"%>
@@ -16,24 +17,68 @@ Map<String, Object> param = new HashMap<String, Object>();
 
 /*
 검색폼에서 입력한 검색어와 필드명을 파라미터로 받아온다. <form>태그의
-전송방식이 get이고 action속성은 없는 상태이므로 현재 페이지로 폼ㄱ밧이
+전송방식이 get이고 action속성은 없는 상태이므로 현재 페이지로 폼값이
 전송된다. 
 */
 String searchField = request.getParameter("searchField");
 String searchWord = request.getParameter("searchWord");
+
 /*
 검색어를 입력한 경우에만 Map에 추가한다. 이 값은 DAO로 전달되어
 where절을 동적으로 추가하는 기능을 수행하게 된다.
 */
+
 if (searchWord != null) {
 	param.put("searchField", searchField);
 	param.put("searchWord", searchWord);
 }
-
-//게시물의 갯수를 카운트한다.
 int totalCount = dao.selectCount(param);
 //목록에 출력할 레코드를 인출한다.
-List<BoardDTO> boardLists = dao.selectList(param);
+//DB자원해제(연결을 해제한다.)
+/*** 페이징 처리 코드 start ***/
+
+/*
+web.xml에 설정한 컨텍스트 초기화 파라미터를 읽어온다. 초기화 파라미터는
+String으로 저장되므로 산술연산을 위해 int형으로 변환해야한다.
+*/
+int pageSize = Integer.parseInt(application.getInitParameter("POSTS_PER_PAGE"));
+int blockPage = Integer.parseInt(application.getInitParameter("PAGES_PER_BLOCK"));
+
+/*
+전체페이지수를 계산
+전체게시물갯수 / 페이지당 출력할 게시물갯수 => 결과값의 올림처리
+가령 게시물갯수가 108개라면 10으로 나눴을때 10.8이 되므로 올림처리하여
+11을 만들어준다. 즉 11페이지가 된다.
+만약 totalCount를 double형으로 변환하지 않으면 정수의 결과가 나오게 
+되므로 10페이지가 될것이다. 따라서 실수의 결과를 얻기위해 형변환 후 계산한다.
+*/
+int totalPage = (int)Math.ceil((double)totalCount / pageSize);
+
+/*
+목록에 처음 진입했을때는 페이지관련 파라미터가 없는 상태이므로 1페이지로
+지정한다. 파라미터가 있다면 request내장객체를 통해 읽은 후 페이지번호로
+지정한다.
+*/
+int pageNum = 1;
+String pageTemp = request.getParameter("pageNum");
+if(pageTemp != null && !pageTemp.equals(""))
+	pageNum = Integer.parseInt(pageTemp);
+/*
+현제 페이지에 출력할 게시물의 구간을 계산한다.
+쿼리문에 적용할 start와 end를 페이지번호와 페이지사이즈를 통해 계산한 후
+Map에 저장한다. 차후 DAO로 전달한다.
+
+*/
+int start = (pageNum - 1) * pageSize + 1;
+int end = pageNum * pageSize;
+param.put("start", start);
+param.put("end", end);
+
+/*** 페이징 처리 코드 end ***/
+
+//게시물의 갯수를 카운트한다.
+//목록에 출력할 레코드를 인출한다.
+List<BoardDTO> boardLists = dao.selectListPage(param);
 //DB자원해제(연결을 해제한다.)
 dao.close();
 %>
@@ -45,7 +90,7 @@ dao.close();
 <body>
     <jsp:include page="../Common/Link.jsp" />  
 
-    <h2>목록 보기(List)</h2>
+    <h2>목록 보기(List) - 현재 페이지 : <%= pageNum %> (전체 : <%= totalPage %>)</h2>
     <!-- 검색폼 -->
     <form method="get">  
     <table border="1" width="90%">
@@ -86,15 +131,17 @@ if (boardLists.isEmpty()) {
 	*/
 	//게시물의 가상번호
 	int virtualNum = 0;
+	int countNum = 0;
 	for (BoardDTO dto : boardLists)
 	{
 		/*
 		현재 출력할 게시물의 갯수에 따라 번호가 달라지게 되므로 아래와 같이
 		가상번호를 부여한다. 전체 게시물의 갯수에서 1씩 차감한다.
 		*/
-		virtualNum = totalCount--;
+		virtualNum = totalCount - (((pageNum - 1) * pageSize) + countNum ++);
 
 %>
+		
         <tr align="center">
             <td><%= virtualNum %></td>  
             <td align="left"> 
@@ -109,9 +156,15 @@ if (boardLists.isEmpty()) {
 }
 %>
     </table>
-   
+   <!-- 목록 하단의 [글쓰기] 버튼 -->
     <table border="1" width="90%">
-        <tr align="right">
+    
+        <tr align="center">
+        	<!-- 페이징 처리 -->
+        	<td>
+        		<%= BoardPage.pagingImg(totalCount, pageSize, blockPage, pageNum, request.getRequestURI()) %>
+        	</td>
+        	<!-- 글쓰기 버튼 -->
             <td><button type="button" onclick="location.href='Write.jsp';">글쓰기
                 </button></td>
         </tr>
