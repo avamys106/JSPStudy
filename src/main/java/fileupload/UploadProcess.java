@@ -40,9 +40,10 @@ public class UploadProcess extends HttpServlet{
 			String originalFileName = FileUtil
 					.uploadFile(req, saveDirectory);
 			//파일명을 변경한다.
-			/*
-			 * String savedFileName = FileUtil .renameFile(saveDirectory, originalFileName);
-			 */
+
+			String savedFileName = FileUtil
+					.renameFile(saveDirectory, originalFileName);
+
 			//업로드 완료 후 리스트로 이동한다.
 			resp.sendRedirect("FileList.jsp");
 		} catch (Exception e) {

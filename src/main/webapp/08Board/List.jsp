@@ -16,7 +16,7 @@ Map<String, Object> param = new HashMap<String, Object>();
 
 /*
 검색폼에서 입력한 검색어와 필드명을 파라미터로 받아온다. <form>태그의
-전송방식이 get이고 action속성은 없는 상태이므로 현재 페이지로 폼ㄱ밧이
+전송방식이 get이고 action속성은 없는 상태이므로 현재 페이지로 폼값이
 전송된다. 
 */
 String searchField = request.getParameter("searchField");
