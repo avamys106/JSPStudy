@@ -72,8 +72,7 @@
             <td>${ row.postdate }</td>
             <td>
             <c:if test="${ not empty row.ofile }">
-            	<a href="../mvcboard/download.do?ofile=${ row.ofile }
-            		&sfile=${ row.sfile }&idx=${ row.idx }">[Down]</a>
+            	<a href="../mvcboard/download.do?ofile=${ row.ofile }&sfile=${ row.sfile }&idx=${ row.idx }">[Down]</a>
             </c:if>
             </td>
         </tr>

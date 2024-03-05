@@ -209,47 +209,91 @@ public class MVCBoardDAO extends DBConnPool {
 			e.printStackTrace();
 		}
 	}
-	//게시물 수정하기
-	public int updateEdit(MVCBoardDTO dto) {
-		int result = 0;
+	
+	//목록에 출력할 실제 게시물을 인출(페이징 기능 추가)
+	
+	//패스워드 검증
+	public boolean confirmPassword(String pass, String idx) {
+		boolean isCorr = true;
 		try {
-			//쿼리문 작성
-			String query = " UPDATE mvcboard SET "
-					+ " title=?, content=? "
-					+ " WHERE num=?";
-			//인파라미터 설정
-			psmt = con.prepareStatement(query);
-			psmt.setString(1, dto.getTitle());
-			psmt.setString(2, dto.getContent());
-			psmt.setString(3, dto.getNum());
-			//쿼리문 실행
-			result = psmt.executeUpdate();
+			//일련번호와 패스워드의 조건에 만족하는 레코드가 있는지 확인
+			String sql = " SELECT COUNT(*) FROM mvcboard WHERE pass=? AND idx=? ";
+			psmt = con.prepareStatement(sql);
+			psmt.setString(1, pass);
+			psmt.setString(2, idx);
+			rs = psmt.executeQuery();
+			/* count()함수는 반드시 결과값이 있으므로 if문 없이 next()를
+			호출한다. */
+			rs.next();
+			if(rs.getInt(1) == 0) {
+				//조건에 만족하는 레코드가 없는경우..
+				isCorr = false;
+			}
 		} catch (Exception e) {
-			System.out.println("게시물 수정 중 예외 발생");
+			/* 쿼리문 실행도중 예외가 발생되면 catch절로 넘어오므로
+			이 경우에도 false로 설정해야한다. */
+			isCorr = false;
 			e.printStackTrace();
 		}
-		
-		return result;
+		return isCorr;
 	}
-	//게시물 삭제하기
-	public int deletePost(MVCBoardDTO dto) {
+	//게시물 삭제
+	public int deletePost(String idx) {
 		int result = 0;
-		
 		try {
-			//인파라미터가 있는 delete 쿼리문 작성
-			String query = " DELETE FROM mvcboard WHERE num=? ";
+			//일련번호에 해당하는 게시물 1개 삭제
+			String query = " DELETE FROM mvcboard WHERE idx=? ";
 			psmt = con.prepareStatement(query);
-			psmt.setString(1, dto.getNum());
+			psmt.setString(1, idx);
 			result = psmt.executeUpdate();
-		} catch (Exception e) {
+		}catch (Exception e) {
 			System.out.println("게시물 삭제 중 예외 발생");
 			e.printStackTrace();
 		}
 		return result;
 	}
 	
-	//목록에 출력할 실제 게시물을 인출(페이징 기능 추가)
-	
+	public int updatePost(MVCBoardDTO dto) {
+		int result = 0;
+		try {
+			/*
+			비회원제 게시판은 패스워드를 통해 검증을 진행한 후 수정이나
+			삭제를 해야한다. 따라서 아래와 같이 where절에는 idx와
+			pass까지 조건을 추가하는것이 좋다. 
+			*/
+			String query = " UPDATE mvcboard "
+						+ " SET title=?, name=?, content=?, ofile=?, sfile=? "
+						+ " WHERE idx=? and pass=? ";
+			
+			psmt = con.prepareStatement(query);
+			psmt.setString(1, dto.getTitle());
+			psmt.setString(2, dto.getName());
+			psmt.setString(3, dto.getContent());
+			psmt.setString(4, dto.getOfile());
+			psmt.setString(5, dto.getSfile());
+			psmt.setString(6, dto.getIdx());
+			psmt.setString(7, dto.getPass());
+			
+			result = psmt.executeUpdate();
+		} catch (Exception e) {
+			System.out.println("게시물 수정 중 예외 발생");
+			e.printStackTrace();
+		}
+		return result;
+	}
+	//파일 다운로드 수 증가
+	public void downCountPlus(String idx) {
+		String sql = " UPDATE mvcboard SET "
+				+ " downcount=downcount+1 "
+				+ " WHERE idx=? ";
+		try {
+			psmt = con.prepareStatement(sql);
+			psmt.setString(1, idx);
+			psmt.executeUpdate();
+		} catch (Exception e) {
+			
+		}
+	}
 }
 
 

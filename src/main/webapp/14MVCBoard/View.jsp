@@ -46,8 +46,7 @@
         	<!-- 첨부파일이 있는 경우에만 파일명과 다운로드 링크를 출력한다. -->   
             <c:if test="${ not empty dto.ofile }">
             ${ dto.ofile }
-            <a href="../mvcboard/download.do?ofile=${ dto.ofile }
-            	&sfile=${ dto.sfile }&idx=${ dto.idx }"> 
+            <a href="../mvcboard/download.do?ofile=${ dto.ofile }&sfile=${ dto.sfile }&idx=${ dto.idx }"> 
             	[다운로드]
             </a>
             </c:if>        
